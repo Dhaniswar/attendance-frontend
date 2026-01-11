@@ -11,6 +11,7 @@ export interface RegisterData extends LoginCredentials {
   last_name: string;
   student_id?: string;
   role?: string;
+  phone?: string;
 }
 
 export interface AuthResponse {
@@ -21,12 +22,12 @@ export interface AuthResponse {
 
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> => {
-    const response = await axiosInstance.post('/auth/login/', credentials);
+    const response = await axiosInstance.post('/auth/token/access/', credentials);
     return response.data;
   },
 
   register: async (data: RegisterData): Promise<ApiResponse<User>> => {
-    const response = await axiosInstance.post('/auth/register/', data);
+    const response = await axiosInstance.post('/users/users/', data);
     return response.data;
   },
 
@@ -41,12 +42,12 @@ export const authApi = {
   },
 
   getCurrentUser: async (): Promise<ApiResponse<User>> => {
-    const response = await axiosInstance.get('/auth/me/');
+    const response = await axiosInstance.get('/users/users/me/');
     return response.data;
   },
 
   refreshToken: async (refresh: string): Promise<{ access: string }> => {
-    const response = await axiosInstance.post('/auth/refresh/', { refresh });
+    const response = await axiosInstance.post('/auth/token/refresh/', { refresh });
     return response.data;
   },
 };
