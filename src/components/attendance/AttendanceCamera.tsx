@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useRef, useState, useCallback } from 'react';
 import Webcam from 'react-webcam';
@@ -12,17 +13,20 @@ import {
 } from '@mui/material';
 import { CameraAlt, CheckCircle, Error } from '@mui/icons-material';
 import { FaceDetectionResult } from '@/types';
+import { faceApi } from '@/api/faceApi';
 
 interface AttendanceCameraProps {
   onFaceDetected: (result: FaceDetectionResult) => void;
   onCapture: (imageData: string) => void;
   isProcessing?: boolean;
+  setIsProcessing?: (value: boolean) => void;
 }
 
 const AttendanceCamera: React.FC<AttendanceCameraProps> = ({
   onFaceDetected,
   onCapture,
   isProcessing = false,
+  setIsProcessing,
 }) => {
   const webcamRef = useRef<Webcam>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
@@ -35,16 +39,31 @@ const AttendanceCamera: React.FC<AttendanceCameraProps> = ({
     facingMode: facingMode,
   };
 
-  const capture = useCallback(() => {
-    if (!webcamRef.current) return;
+const capture = useCallback(async () => {
+  if (!webcamRef.current) return;
 
-    const imageSrc = webcamRef.current.getScreenshot();
-    if (imageSrc) {
-      setLastCapture(imageSrc);
-      onCapture(imageSrc);
-      setError(null);
+  const imageSrc = webcamRef.current.getScreenshot();
+  if (imageSrc) {
+    setLastCapture(imageSrc);
+    setIsProcessing?.(true);
+    setError(null);
+    
+    try {
+      // Call face detection API
+      const response = await faceApi.detectFaces({ image: imageSrc });
+      
+      if (response.data.face_detected) {
+        onFaceDetected(response.data);
+      } else {
+        setError('No face detected. Please try again.');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Face detection failed');
+    } finally {
+      setIsProcessing?.(false);
     }
-  }, [onCapture]);
+  }
+}, [onFaceDetected]);
 
   const flipCamera = () => {
     setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'));

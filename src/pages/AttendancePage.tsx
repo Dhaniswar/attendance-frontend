@@ -45,6 +45,8 @@ const AttendancePage: React.FC = () => {
   const [livenessResult, setLivenessResult] = useState<LivenessCheckType | null>(null);
   const [successDialog, setSuccessDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [capturedImages, setCapturedImages] = useState<string[]>([]);
+
 
   const steps = ['Face Detection', 'Liveness Check', 'Confirmation'];
 
@@ -81,21 +83,24 @@ const AttendancePage: React.FC = () => {
     }
   };
 
-  const handleCapture = async (imageData: string) => {
-    setIsProcessing(true);
-    setErrorMessage(null);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Mock face detection result
-    const mockResult: FaceDetectionResult = {
-      face_detected: true,
-      confidence: 0.92,
-      face_embedding: Array(128).fill(0.1),
-      bounding_box: { x: 100, y: 100, width: 200, height: 200 },
-      landmarks: Array(68).fill([0, 0]),
-    };
+const handleCaptureImage = async (imageData: string) => {
+  setErrorMessage(null);
+  setIsProcessing(true);
+
+  // Add the new image
+  const updatedImages = [...capturedImages, imageData];
+  setCapturedImages(updatedImages);
+
+  // Simulate face detection API call (replace with real API later)
+  await new Promise(resolve => setTimeout(resolve, 800));
+
+  const mockResult: FaceDetectionResult = {
+    face_detected: true,
+    confidence: 0.92,
+    face_embedding: Array(128).fill(0.1),
+    bounding_box: { x: 100, y: 100, width: 200, height: 200 },
+    landmarks: Array(68).fill([0, 0]),
+  };
     
     handleFaceDetected(mockResult);
     setIsProcessing(false);
@@ -116,6 +121,7 @@ const AttendancePage: React.FC = () => {
     setFaceResult(null);
     setLivenessResult(null);
     setErrorMessage(null);
+    setCapturedImages([]);
   };
 
   const getStepContent = (step: number) => {
@@ -124,7 +130,7 @@ const AttendancePage: React.FC = () => {
         return (
           <AttendanceCamera
             onFaceDetected={handleFaceDetected}
-            onCapture={handleCapture}
+            onCapture={handleCaptureImage}
             isProcessing={isProcessing}
           />
         );

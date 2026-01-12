@@ -25,7 +25,7 @@ export const studentApi = {
     pageSize: number = 10,
     search?: string
   ): Promise<ApiResponse<PaginatedResponse<User>>> => {
-    const response = await axiosInstance.get('/students/', {
+    const response = await axiosInstance.get('/users/', {
       params: { page, page_size: pageSize, search },
     });
     return response.data;
@@ -33,13 +33,13 @@ export const studentApi = {
 
   // Get student by ID
   getStudentById: async (id: number): Promise<ApiResponse<User>> => {
-    const response = await axiosInstance.get(`/students/${id}/`);
+    const response = await axiosInstance.get(`/users/${id}/`);
     return response.data;
   },
 
   // Create new student
   createStudent: async (data: StudentCreateRequest): Promise<ApiResponse<User>> => {
-    const response = await axiosInstance.post('/students/', data);
+    const response = await axiosInstance.post('/users/', data);
     return response.data;
   },
 
@@ -48,13 +48,13 @@ export const studentApi = {
     id: number,
     data: StudentUpdateRequest
   ): Promise<ApiResponse<User>> => {
-    const response = await axiosInstance.patch(`/students/${id}/`, data);
+    const response = await axiosInstance.patch(`/users/${id}/`, data);
     return response.data;
   },
 
   // Delete student
   deleteStudent: async (id: number): Promise<ApiResponse<void>> => {
-    const response = await axiosInstance.delete(`/students/${id}/`);
+    const response = await axiosInstance.delete(`/users/${id}/`);
     return response.data;
   },
 
@@ -63,7 +63,7 @@ export const studentApi = {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await axiosInstance.post('/students/import/', formData, {
+    const response = await axiosInstance.post('/users/import/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -73,7 +73,7 @@ export const studentApi = {
 
   // Get student statistics
   getStudentStatistics: async (): Promise<ApiResponse<any>> => {
-    const response = await axiosInstance.get('/students/statistics/');
+    const response = await axiosInstance.get('/users/statistics/');
     return response.data;
   },
 
@@ -83,7 +83,7 @@ export const studentApi = {
     page: number = 1,
     pageSize: number = 10
   ): Promise<ApiResponse<PaginatedResponse<User>>> => {
-    const response = await axiosInstance.get('/students/search/', {
+    const response = await axiosInstance.get('/users/search/', {
       params: { q: query, page, page_size: pageSize },
     });
     return response.data;
@@ -94,7 +94,7 @@ export const studentApi = {
     page: number = 1,
     pageSize: number = 10
   ): Promise<ApiResponse<PaginatedResponse<User>>> => {
-    const response = await axiosInstance.get('/students/inactive/', {
+    const response = await axiosInstance.get('/users/inactive/', {
       params: { page, page_size: pageSize },
     });
     return response.data;
@@ -105,7 +105,7 @@ export const studentApi = {
     id: number,
     isActive: boolean
   ): Promise<ApiResponse<User>> => {
-    const response = await axiosInstance.patch(`/students/${id}/status/`, {
+    const response = await axiosInstance.patch(`/users/${id}/status/`, {
       is_active: isActive,
     });
     return response.data;

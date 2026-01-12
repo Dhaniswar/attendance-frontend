@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -14,6 +14,7 @@ import {
   Button,
   Container,
   Badge,
+  Divider,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -26,6 +27,8 @@ import {
 } from '@mui/icons-material';
 import { logout } from '@/store/slices/authSlice';
 import { RootState, AppDispatch } from '@/store/store';
+import { notificationApi } from '@/api/notificationApi';
+import { Notification } from '@/types';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -34,10 +37,59 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  
+
   const { user } = useSelector((state: RootState) => state.auth);
+
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
-  const [anchorElNotifications, setAnchorElNotifications] = useState<null | HTMLElement>(null);
+  const [anchorElNotifications, setAnchorElNotifications] =
+    useState<null | HTMLElement>(null);
+
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch notifications when user logs in
+
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await notificationApi.getNotifications(1, 5, true);
+      setNotifications(response.data.results);
+      setUnreadCount(response.data.count);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    }
+  };
+
+    useEffect(() => {
+    if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchNotifications();
+    } else {
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  }, [user]);
+
+  const handleMarkAsRead = async (id: number) => {
+    try {
+      await notificationApi.markAsRead(id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      setUnreadCount((prev) => Math.max(prev - 1, 0));
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationApi.markAllAsRead();
+      setNotifications([]);
+      setUnreadCount(0);
+      handleCloseNotifications();
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+    }
+  };
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
@@ -88,7 +140,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     <AppBar position="static" elevation={0}>
       <Container maxWidth="xl">
         <Toolbar disableGutters>
-          {/* Logo and Brand */}
+          {/* Logo */}
           <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
             <Face sx={{ mr: 1 }} />
             <Typography
@@ -110,85 +162,114 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             </Typography>
           </Box>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu */}
           <Box sx={{ flexGrow: 0, display: { xs: 'flex', md: 'none' } }}>
-            <IconButton
-              size="large"
-              aria-label="menu"
-              onClick={onMenuClick}
-              color="inherit"
-            >
+            <IconButton size="large" onClick={onMenuClick} color="inherit">
               <MenuIcon />
             </IconButton>
           </Box>
 
-          {/* Desktop navigation */}
+          {/* Navigation */}
           <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-            <Button
-              component={RouterLink}
-              to="/"
-              sx={{ my: 2, color: 'white', display: 'block' }}
-            >
+            <Button component={RouterLink} to="/" sx={{ my: 2, color: 'white' }}>
               Home
             </Button>
-            
+
             {user && (
               <>
-                <Button
-                  component={RouterLink}
-                  to="/attendance"
-                  sx={{ my: 2, color: 'white', display: 'block' }}
-                >
+                <Button component={RouterLink} to="/attendance" sx={{ my: 2, color: 'white' }}>
                   Attendance
                 </Button>
-                
+
                 {(user.role === 'admin' || user.role === 'teacher') && (
-                  <Button
-                    component={RouterLink}
-                    to="/admin"
-                    sx={{ my: 2, color: 'white', display: 'block' }}
-                  >
+                  <Button component={RouterLink} to="/admin" sx={{ my: 2, color: 'white' }}>
                     Admin
                   </Button>
                 )}
-                
-                <Button
-                  component={RouterLink}
-                  to="/analytics"
-                  sx={{ my: 2, color: 'white', display: 'block' }}
-                >
+
+                <Button component={RouterLink} to="/analytics" sx={{ my: 2, color: 'white' }}>
                   Analytics
                 </Button>
               </>
             )}
           </Box>
 
-          {/* User actions */}
+          {/* Right side */}
           <Box sx={{ flexGrow: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
             {user ? (
               <>
                 {/* Notifications */}
                 <Tooltip title="Notifications">
                   <IconButton onClick={handleOpenNotifications} color="inherit">
-                    <Badge badgeContent={3} color="error">
+                    <Badge badgeContent={unreadCount} color="error">
                       <Notifications />
                     </Badge>
                   </IconButton>
                 </Tooltip>
+
                 <Menu
                   anchorEl={anchorElNotifications}
                   open={Boolean(anchorElNotifications)}
                   onClose={handleCloseNotifications}
+                  sx={{ mt: 1 }}
                 >
-                  <MenuItem onClick={handleCloseNotifications}>
-                    <Typography variant="body2">New student registered</Typography>
-                  </MenuItem>
-                  <MenuItem onClick={handleCloseNotifications}>
-                    <Typography variant="body2">Attendance marked successfully</Typography>
-                  </MenuItem>
-                  <MenuItem onClick={handleCloseNotifications}>
-                    <Typography variant="body2">System update available</Typography>
-                  </MenuItem>
+                  {notifications.length === 0 ? (
+                    <MenuItem>
+                      <Typography variant="body2" color="text.secondary">
+                        No new notifications
+                      </Typography>
+                    </MenuItem>
+                  ) : (
+                    notifications.map((notification) => (
+                      <MenuItem
+                        key={notification.id}
+                        onClick={() => handleMarkAsRead(notification.id)}
+                        sx={{
+                          borderLeft: '3px solid',
+                          borderColor:
+                            notification.type === 'alert'
+                              ? 'error.main'
+                              : notification.type === 'system'
+                              ? 'warning.main'
+                              : notification.type === 'info'
+                              ? 'info.main'
+                              : 'success.main',
+                          alignItems: 'flex-start',
+                          whiteSpace: 'normal',
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="subtitle2">
+                            {notification.title}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {notification.message}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(notification.created_at).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </Typography>
+                        </Box>
+                      </MenuItem>
+                    ))
+                  )}
+
+                  {notifications.length > 0 && (
+                    <>
+                      <Divider />
+                      <MenuItem onClick={handleMarkAllAsRead}>
+                        <Typography
+                          variant="body2"
+                          color="primary"
+                          sx={{ textAlign: 'center', width: '100%' }}
+                        >
+                          Mark all as read
+                        </Typography>
+                      </MenuItem>
+                    </>
+                  )}
                 </Menu>
 
                 {/* User menu */}
@@ -203,54 +284,35 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                     )}
                   </IconButton>
                 </Tooltip>
+
                 <Menu
                   sx={{ mt: '45px' }}
                   anchorEl={anchorElUser}
-                  anchorOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
-                  keepMounted
-                  transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
+                  anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                   open={Boolean(anchorElUser)}
                   onClose={handleCloseUserMenu}
                 >
                   <MenuItem onClick={handleDashboard}>
                     <Dashboard sx={{ mr: 1 }} />
-                    <Typography textAlign="center">Dashboard</Typography>
+                    <Typography>Dashboard</Typography>
                   </MenuItem>
                   <MenuItem onClick={handleProfile}>
                     <Person sx={{ mr: 1 }} />
-                    <Typography textAlign="center">Profile</Typography>
+                    <Typography>Profile</Typography>
                   </MenuItem>
                   <MenuItem onClick={handleLogout}>
                     <Logout sx={{ mr: 1 }} />
-                    <Typography textAlign="center">Logout</Typography>
+                    <Typography>Logout</Typography>
                   </MenuItem>
                 </Menu>
               </>
             ) : (
               <>
-                <Button
-                  component={RouterLink}
-                  to="/login"
-                  color="inherit"
-                  variant="outlined"
-                  size="small"
-                  sx={{ mr: 1 }}
-                >
+                <Button component={RouterLink} to="/login" color="inherit" variant="outlined" size="small">
                   Login
                 </Button>
-                <Button
-                  component={RouterLink}
-                  to="/register"
-                  color="inherit"
-                  variant="contained"
-                  size="small"
-                >
+                <Button component={RouterLink} to="/register" color="inherit" variant="contained" size="small">
                   Register
                 </Button>
               </>
