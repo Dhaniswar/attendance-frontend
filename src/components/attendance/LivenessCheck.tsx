@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -10,6 +11,7 @@ import {
   StepLabel,
   Alert,
   LinearProgress,
+  Grid,
 } from '@mui/material';
 import {
   Visibility,
@@ -17,7 +19,9 @@ import {
   CheckCircle,
   CameraAlt,
 } from '@mui/icons-material';
+import { faceApi } from '@/api/faceApi';
 import { LivenessCheck as LivenessCheckType } from '@/types';
+// import { AttendanceCamera } from './AttendanceCamera';
 
 interface LivenessCheckProps {
   onComplete: (result: LivenessCheckType) => void;
@@ -30,80 +34,74 @@ const LivenessCheck: React.FC<LivenessCheckProps> = ({
 }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [stepsCompleted, setStepsCompleted] = useState<boolean[]>([false, false, false]);
-  const [progress, setProgress] = useState(0);
   const [challenge, setChallenge] = useState<string>('Look at the camera');
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [capturedImages, setCapturedImages] = useState<string[]>([]);
+  const [isCapturing, setIsCapturing] = useState(false);
 
-  const steps = [
-    'Eye Blink Detection',
-    'Head Movement',
-    'Texture Analysis',
-  ];
+  const steps = ['Look at Camera', 'Turn Head', 'Blink Eyes'];
 
   const challenges = [
     'Look at the camera',
-    'Blink your eyes',
-    'Turn your head left',
-    'Turn your head right',
+    'Slowly turn your head left',
+    'Slowly turn your head right',
+    'Blink your eyes 2-3 times',
     'Look back at camera',
   ];
 
-  useEffect(() => {
-    // Simulate liveness check process
-    if (isProcessing) {
-      const timer = setInterval(() => {
-        setProgress((oldProgress) => {
-          if (oldProgress >= 100) {
-            clearInterval(timer);
-            
-            // Move to next step
-            if (activeStep < steps.length) {
-              const newStepsCompleted = [...stepsCompleted];
-              newStepsCompleted[activeStep] = true;
-              setStepsCompleted(newStepsCompleted);
-              
-              if (activeStep < steps.length - 1) {
-                setActiveStep((prev) => prev + 1);
-                setProgress(0);
-                setChallenge(challenges[activeStep + 1]);
-              } else {
-                // All steps completed
-                const result: LivenessCheckType = {
-                  eye_blink_detected: true,
-                  head_movement_detected: true,
-                  texture_analysis_passed: true,
-                  overall_score: 0.85,
-                  is_live: true,
-                };
-                onComplete(result);
-              }
-            }
-            return 100;
-          }
-          return Math.min(oldProgress + 10, 100);
-        });
-      }, 200);
+  const handleCapture = async () => {
+    if (capturedImages.length >= 5) return;
 
-      return () => {
-        clearInterval(timer);
-      };
+    setIsCapturing(true);
+
+    // ⬇️ Simulated capture (replace with real webcam later)
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    const mockImage =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+    const updated = [...capturedImages, mockImage];
+    setCapturedImages(updated);
+    setIsCapturing(false);
+
+    // Step progression
+    if (activeStep < steps.length - 1) {
+      setStepsCompleted((prev) => {
+        const copy = [...prev];
+        copy[activeStep] = true;
+        return copy;
+      });
+
+      const nextStep = activeStep + 1;
+      setActiveStep(nextStep);
+      setChallenge(challenges[nextStep]);
+    } else {
+      await performLivenessCheck(updated);
     }
-  }, [isProcessing, activeStep, stepsCompleted, onComplete]);
+  };
 
-  const handleStartCheck = () => {
-    setProgress(0);
-    setActiveStep(0);
-    setStepsCompleted([false, false, false]);
-    setChallenge(challenges[0]);
+  const performLivenessCheck = async (images: string[]) => {
+    setIsCapturing(true);
+
+    try {
+      const response = await faceApi.checkLiveness({
+        images,
+      });
+
+      // Mark all steps complete
+      setStepsCompleted([true, true, true]);
+
+      // Send result upward
+      onComplete(response.data);
+    } catch (error) {
+      console.error('Liveness check failed:', error);
+    } finally {
+      setIsCapturing(false);
+    }
   };
 
   const getStepIcon = (index: number) => {
-    if (stepsCompleted[index]) {
-      return <CheckCircle color="success" />;
-    }
-    if (index === activeStep) {
-      return <CameraAlt color="primary" />;
-    }
+    if (stepsCompleted[index]) return <CheckCircle color="success" />;
+    if (index === activeStep) return <CameraAlt color="primary" />;
     return null;
   };
 
@@ -113,15 +111,14 @@ const LivenessCheck: React.FC<LivenessCheckProps> = ({
         <Typography variant="h6" gutterBottom>
           Liveness Detection
         </Typography>
-        
+
         <Alert severity="info" sx={{ mb: 3 }}>
           <Typography variant="body2">
-            This step ensures you're a real person and not a photo/video.
-            Please follow the instructions carefully.
+            Follow the instructions to prove you're a real person
           </Typography>
         </Alert>
 
-        {/* Progress Stepper */}
+        {/* Stepper */}
         <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
           {steps.map((label, index) => (
             <Step key={label} completed={stepsCompleted[index]}>
@@ -132,7 +129,7 @@ const LivenessCheck: React.FC<LivenessCheckProps> = ({
           ))}
         </Stepper>
 
-        {/* Challenge Display */}
+        {/* Challenge Box */}
         <Box
           sx={{
             position: 'relative',
@@ -141,194 +138,70 @@ const LivenessCheck: React.FC<LivenessCheckProps> = ({
             borderRadius: 2,
             mb: 3,
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            overflow: 'hidden',
           }}
         >
-          {/* Mock video display */}
-          <Box
-            sx={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'column',
-              gap: 2,
-            }}
-          >
-            <Box
-              sx={{
-                width: 200,
-                height: 200,
-                borderRadius: '50%',
-                border: '3px dashed',
-                borderColor: 'primary.main',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-              }}
-            >
-              {/* Face outline */}
-              <Box
-                sx={{
-                  width: 120,
-                  height: 160,
-                  border: '2px solid',
-                  borderColor: 'primary.light',
-                  borderRadius: '50%',
-                }}
-              />
-              
-              {/* Eyes */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 60,
-                  left: 40,
-                  width: 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  bgcolor: 'primary.light',
-                }}
-              />
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 60,
-                  right: 40,
-                  width: 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  bgcolor: 'primary.light',
-                }}
-              />
-              
-              {/* Mouth */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  bottom: 60,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: 60,
-                  height: 10,
-                  borderRadius: 5,
-                  bgcolor: 'primary.light',
-                }}
-              />
-            </Box>
-            
-            <Typography
-              variant="h5"
-              color="primary"
-              sx={{
-                animation: 'pulse 2s infinite',
-                '@keyframes pulse': {
-                  '0%': { opacity: 1 },
-                  '50%': { opacity: 0.7 },
-                  '100%': { opacity: 1 },
-                },
-              }}
-            >
-              {challenge}
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="h4" color="primary">
+              {capturedImages.length}/5
             </Typography>
-          </Box>
+            <Typography>{challenge}</Typography>
 
-          <video
-            ref={videoRef}
-            style={{ display: 'none' }}
-            autoPlay
-            playsInline
-          />
+            {isCapturing && (
+              <Typography variant="body2" color="text.secondary">
+                Processing...
+              </Typography>
+            )}
+          </Box>
         </Box>
 
-        {/* Progress Bar */}
-        {isProcessing && (
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Processing liveness check...
-            </Typography>
-            <LinearProgress
-              variant="determinate"
-              value={progress}
-              sx={{ height: 8, borderRadius: 4 }}
-            />
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              Step {activeStep + 1} of {steps.length}: {steps[activeStep]}
-            </Typography>
-          </Box>
-        )}
-
-        {/* Status Indicators */}
-        {/* Status Indicators */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mb: 3 }}>
-          <Box sx={{ textAlign: 'center' }}>
-            <Visibility
-              sx={{
-                fontSize: 40,
-                color: stepsCompleted[0] ? 'success.main' : 'action.disabled',
-                mb: 1,
-              }}
-            />
-            <Typography variant="caption" display="block">
-              Eye Blink
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'center' }}>
-            <RotateRight
-              sx={{
-                fontSize: 40,
-                color: stepsCompleted[1] ? 'success.main' : 'action.disabled',
-                mb: 1,
-              }}
-            />
-            <Typography variant="caption" display="block">
-              Head Movement
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'center' }}>
-            <CameraAlt
-              sx={{
-                fontSize: 40,
-                color: stepsCompleted[2] ? 'success.main' : 'action.disabled',
-                mb: 1,
-              }}
-            />
-            <Typography variant="caption" display="block">
-              Texture
-            </Typography>
-          </Box>
-        </Box>
-        {/* Start Button */}
-        {!isProcessing && activeStep === 0 && (
+        {/* Capture Button */}
+        {!stepsCompleted.every(Boolean) && (
           <Button
-            variant="contained"
             fullWidth
+            variant="contained"
             size="large"
-            onClick={handleStartCheck}
+            onClick={handleCapture}
+            disabled={isCapturing || capturedImages.length >= 5}
             startIcon={<CameraAlt />}
           >
-            Start Liveness Check
+            {isCapturing
+              ? 'Processing...'
+              : `Capture Image ${capturedImages.length + 1}`}
           </Button>
         )}
 
-        {/* Tips */}
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            <strong>Tips for success:</strong>
-          </Typography>
-          <Typography variant="caption" color="text.secondary" component="div">
-            • Ensure good lighting
-            • Remove glasses if possible
-            • Follow the instructions exactly
-            • Stay within the frame
-            • Complete within 30 seconds
-          </Typography>
-        </Box>
+        {/* Progress Bar */}
+        {capturedImages.length > 0 && (
+          <Box sx={{ mt: 2 }}>
+            <LinearProgress
+              variant="determinate"
+              value={(capturedImages.length / 5) * 100}
+              sx={{ height: 8, borderRadius: 4 }}
+            />
+            <Typography variant="caption" color="text.secondary">
+              {capturedImages.length} of 5 images captured
+            </Typography>
+          </Box>
+        )}
+
+        {/* Status Icons */}
+        <Grid container spacing={2} sx={{ mt: 3 }}>
+          {['Face', 'Movement', 'Blink'].map((label, i) => (
+            <Grid item xs={4} key={label}>
+              <Box sx={{ textAlign: 'center' }}>
+                <CameraAlt
+                  sx={{
+                    fontSize: 40,
+                    color: stepsCompleted[i] ? 'success.main' : 'action.disabled',
+                  }}
+                />
+                <Typography variant="caption">{label}</Typography>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
       </CardContent>
     </Card>
   );

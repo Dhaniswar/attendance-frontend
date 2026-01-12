@@ -42,6 +42,18 @@ export interface FaceDetectionResult {
   confidence: number;
 }
 
+export interface Notification {
+  id: number;
+  type: 'attendance' | 'system' | 'alert' | 'info';
+  title: string;
+  message: string;
+  is_read: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  metadata: Record<string, any>;
+  created_at: string;
+}
+
+
 export interface ApiResponse<T> {
   data: T;
   message: string;

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axiosInstance from './axiosConfig';
-import { FaceDetectionResult, LivenessCheck, ApiResponse } from '@/types';
+import { FaceDetectionResult, LivenessCheck, ApiResponse, Attendance } from '@/types';
 
 export interface FaceDetectionRequest {
   image: string; // base64
@@ -19,6 +19,12 @@ export interface FaceEnrollmentRequest {
   student_id: number;
   images: string[];
 }
+
+export interface MarkAttendanceRequest {
+  image: string; // base64 encoded image
+  location?: string;
+}
+
 
 export const faceApi = {
   // Detect faces in image
@@ -50,4 +56,12 @@ export const faceApi = {
     const response = await axiosInstance.get('/core/health/');
     return response.data;
   },
+
+  // Mark attendance
+  markAttendance: async (data: MarkAttendanceRequest): Promise<ApiResponse<Attendance>> => {
+    const response = await axiosInstance.post('/attendance/mark_with_face/', data);
+    return response.data;
+  },
+
+
 };

@@ -2,6 +2,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Attendance } from '@/types';
 import { attendanceApi } from '@/api/attendanceApi';
+import { faceApi } from '@/api/faceApi'; 
 
 interface AttendanceState {
   todayAttendance: Attendance[];
@@ -45,7 +46,7 @@ export const markAttendance = createAsyncThunk(
   'attendance/mark',
   async (data: { image: string; location?: string }, { rejectWithValue }) => {
     try {
-      const response = await attendanceApi.markAttendance(data);
+      const response = await faceApi.markAttendance(data);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to mark attendance');

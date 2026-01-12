@@ -27,7 +27,7 @@ export const authApi = {
   },
 
   register: async (data: RegisterData): Promise<ApiResponse<User>> => {
-    const response = await axiosInstance.post('/users/users/', data);
+    const response = await axiosInstance.post('/users/', data);
     return response.data;
   },
 
@@ -42,7 +42,7 @@ export const authApi = {
   },
 
   getCurrentUser: async (): Promise<ApiResponse<User>> => {
-    const response = await axiosInstance.get('/users/users/me/');
+    const response = await axiosInstance.get('/users/me/');
     return response.data;
   },
 

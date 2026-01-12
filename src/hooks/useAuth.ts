@@ -52,8 +52,8 @@ export const useAuth = () => {
 
   const hasPermission = useCallback(
     (permission: string) => {
-      if (!user?.permissions) return false;
-      return user.permissions.includes(permission);
+      if (!user?.role) return false;
+      return user.role.includes(permission);
     },
     [user]
   );
