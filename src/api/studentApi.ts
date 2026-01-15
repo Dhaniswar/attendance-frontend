@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axiosInstance from './axiosConfig';
-import { User, ApiResponse, PaginatedResponse } from '@/types';
+import { User,  PaginatedResponse } from '@/types';
 
 export interface StudentCreateRequest {
   first_name: string;
   last_name: string;
   email: string;
   student_id: string;
-  password?: string;
+  password: string;
+  confirm_password: string;
+  role?: 'STUDENT' | 'TEACHER' | 'ADMIN';
+  phone?: string;
 }
 
 export interface StudentUpdateRequest {
@@ -24,7 +27,7 @@ export const studentApi = {
     page: number = 1,
     pageSize: number = 10,
     search?: string
-  ): Promise<ApiResponse<PaginatedResponse<User>>> => {
+  ): Promise<PaginatedResponse<User>> => {
     const response = await axiosInstance.get('/users/', {
       params: { page, page_size: pageSize, search },
     });
@@ -32,13 +35,13 @@ export const studentApi = {
   },
 
   // Get student by ID
-  getStudentById: async (id: number): Promise<ApiResponse<User>> => {
+  getStudentById: async (id: number): Promise<User> => {
     const response = await axiosInstance.get(`/users/${id}/`);
     return response.data;
   },
 
   // Create new student
-  createStudent: async (data: StudentCreateRequest): Promise<ApiResponse<User>> => {
+  createStudent: async (data: StudentCreateRequest): Promise<User> => {
     const response = await axiosInstance.post('/users/', data);
     return response.data;
   },
@@ -47,19 +50,19 @@ export const studentApi = {
   updateStudent: async (
     id: number,
     data: StudentUpdateRequest
-  ): Promise<ApiResponse<User>> => {
+  ): Promise<User> => {
     const response = await axiosInstance.patch(`/users/${id}/`, data);
     return response.data;
   },
 
   // Delete student
-  deleteStudent: async (id: number): Promise<ApiResponse<void>> => {
+  deleteStudent: async (id: number): Promise<void> => {
     const response = await axiosInstance.delete(`/users/${id}/`);
     return response.data;
   },
 
   // Bulk import students
-  importStudents: async (file: File): Promise<ApiResponse<{ imported: number; failed: number }>> => {
+  importStudents: async (file: File): Promise<{ imported: number; failed: number }> => {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -72,7 +75,7 @@ export const studentApi = {
   },
 
   // Get student statistics
-  getStudentStatistics: async (): Promise<ApiResponse<any>> => {
+  getStudentStatistics: async (): Promise<any> => {
     const response = await axiosInstance.get('/users/statistics/');
     return response.data;
   },
@@ -82,7 +85,7 @@ export const studentApi = {
     query: string,
     page: number = 1,
     pageSize: number = 10
-  ): Promise<ApiResponse<PaginatedResponse<User>>> => {
+  ): Promise<PaginatedResponse<User>> => {
     const response = await axiosInstance.get('/users/search/', {
       params: { q: query, page, page_size: pageSize },
     });
@@ -93,7 +96,7 @@ export const studentApi = {
   getInactiveStudents: async (
     page: number = 1,
     pageSize: number = 10
-  ): Promise<ApiResponse<PaginatedResponse<User>>> => {
+  ): Promise<PaginatedResponse<User>> => {
     const response = await axiosInstance.get('/users/inactive/', {
       params: { page, page_size: pageSize },
     });
@@ -104,7 +107,7 @@ export const studentApi = {
   toggleStudentStatus: async (
     id: number,
     isActive: boolean
-  ): Promise<ApiResponse<User>> => {
+  ): Promise<User> => {
     const response = await axiosInstance.patch(`/users/${id}/status/`, {
       is_active: isActive,
     });

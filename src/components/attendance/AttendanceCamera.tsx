@@ -52,8 +52,9 @@ const capture = useCallback(async () => {
       // Call face detection API
       const response = await faceApi.detectFaces({ image: imageSrc });
       
-      if (response.data.face_detected) {
-        onFaceDetected(response.data);
+      if (response.face_detected) {
+        onFaceDetected(response);
+        onCapture(imageSrc);
       } else {
         setError('No face detected. Please try again.');
       }

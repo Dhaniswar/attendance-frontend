@@ -1,12 +1,18 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import React, {
+  createContext,
+  useContext,
+  ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
-import { WEBSOCKET_EVENTS } from '@/utils/constants';
 
 interface SocketContextType {
-  socket: Socket | null;
+  socket: WebSocket | null;
   isConnected: boolean;
   sendEvent: (event: string, data: any) => void;
 }
@@ -27,81 +33,110 @@ interface SocketProviderProps {
 }
 
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const { token, user } = useSelector((state: RootState) => state.auth);
+
+  const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const { token } = useSelector((state: RootState) => state.auth);
+  const reconnectTimeout = useRef<number | null>(null);
 
   useEffect(() => {
     if (!token) return;
 
-    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws';
-    const newSocket = io(wsUrl, {
-      auth: {
-        token: token,
-      },
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
+    // You can choose attendance OR notifications:
+    const baseWsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws';
 
-    newSocket.on('connect', () => {
-      console.log('WebSocket connected');
-      setIsConnected(true);
-    });
+    // Example 1: Attendance consumer
+    const wsUrl = `${baseWsUrl}/attendance/?token=${token}`;
 
-    newSocket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
-      setIsConnected(false);
-    });
+    // Example 2 (if you want notifications instead):
+    // const wsUrl = `${baseWsUrl}/notifications/${user?.id}/?token=${token}`;
 
-    newSocket.on('connect_error', (error) => {
-      console.error('WebSocket connection error:', error);
-      setIsConnected(false);
-    });
+    console.log("Connecting to:", wsUrl);
 
-    // Listen for events
-    newSocket.on(WEBSOCKET_EVENTS.ATTENDANCE_MARKED, (data) => {
-      console.log('Attendance marked:', data);
-      // You can dispatch Redux action or show notification here
-    });
+    const connect = () => {
+      const ws = new WebSocket(wsUrl);
 
-    newSocket.on(WEBSOCKET_EVENTS.STUDENT_REGISTERED, (data) => {
-      console.log('Student registered:', data);
-    });
+      ws.onopen = () => {
+        console.log("WebSocket connected");
+        setIsConnected(true);
+        setSocket(ws);
+      };
 
-    newSocket.on(WEBSOCKET_EVENTS.SYSTEM_ALERT, (data) => {
-      console.log('System alert:', data);
-    });
+      ws.onclose = (event) => {
+        console.warn(" WebSocket disconnected", event.code);
+        setIsConnected(false);
+        setSocket(null);
 
-    newSocket.on(WEBSOCKET_EVENTS.REAL_TIME_UPDATE, (data) => {
-      console.log('Real-time update:', data);
-    });
+        // Auto reconnect
+        reconnectTimeout.current = window.setTimeout(() => {
+          console.log("Reconnecting WebSocket...");
+          connect();
+        }, 2000);
+      };
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSocket(newSocket);
+      ws.onerror = (err) => {
+        console.error("WebSocket error:", err);
+        ws.close();
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log("WS message:", data);
+
+          // Example routing by type (matches your consumers)
+          switch (data.type) {
+            case "attendance_marked":
+              console.log("Attendance marked:", data.data);
+              break;
+
+            case "student_registered":
+              console.log("Student registered:", data.data);
+              break;
+
+            case "notification":
+              console.log("Notification:", data.data);
+              break;
+
+            case "pong":
+              console.log("Pong received:", data.timestamp);
+              break;
+
+            default:
+              console.log("Unknown WS event:", data);
+          }
+        } catch (err) {
+          console.error("Invalid WS message:", event.data);
+        }
+      };
+    };
+
+    connect();
 
     return () => {
-      newSocket.close();
+      if (reconnectTimeout.current) {
+        clearTimeout(reconnectTimeout.current);
+      }
+      socket?.close();
     };
   }, [token]);
 
   const sendEvent = (event: string, data: any) => {
-    if (socket && isConnected) {
-      socket.emit(event, data);
-    } else {
-      console.warn('Socket not connected');
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      console.warn("WebSocket not connected");
+      return;
     }
-  };
 
-  const value = {
-    socket,
-    isConnected,
-    sendEvent,
+    socket.send(
+      JSON.stringify({
+        type: event,
+        ...data,
+      })
+    );
   };
 
   return (
-    <SocketContext.Provider value={value}>
+    <SocketContext.Provider value={{ socket, isConnected, sendEvent }}>
       {children}
     </SocketContext.Provider>
   );

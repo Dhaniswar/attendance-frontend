@@ -53,8 +53,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const fetchNotifications = async () => {
     try {
       const response = await notificationApi.getNotifications(1, 5, true);
-      setNotifications(response.data.results);
-      setUnreadCount(response.data.count);
+      setNotifications(response.results);
+      setUnreadCount(response.count);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Grid,
@@ -33,6 +33,11 @@ import {
 import Header from '@/components/common/Header';
 import Sidebar from '@/components/common/Sidebar';
 import StatisticsCard from '@/components/analytics/StatisticsCard';
+import AddStudentForm from '@/components/admin/AddStudentForm';
+import { studentApi } from '@/api/studentApi';
+import { User } from '@/types';
+
+
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -52,6 +57,8 @@ const AdminPage: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tabValue, setTabValue] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [openAddStudent, setOpenAddStudent] = useState(false);
+
 
   const handleMenuClick = () => {
     setSidebarOpen(true);
@@ -65,13 +72,38 @@ const AdminPage: React.FC = () => {
     setTabValue(newValue);
   };
 
-  // Mock data
-  const students = [
-    { id: 1, name: 'John Doe', studentId: 'S001', email: 'john@example.com', status: 'Active', attendance: '95%' },
-    { id: 2, name: 'Jane Smith', studentId: 'S002', email: 'jane@example.com', status: 'Active', attendance: '89%' },
-    { id: 3, name: 'Bob Johnson', studentId: 'S003', email: 'bob@example.com', status: 'Inactive', attendance: '76%' },
-    { id: 4, name: 'Alice Brown', studentId: 'S004', email: 'alice@example.com', status: 'Active', attendance: '92%' },
-  ];
+
+  const [students, setStudents] = useState<User[]>([]);
+
+
+
+  useEffect(() => {
+  const fetchStudents = async () => {
+    try {
+      const response = await studentApi.getStudents();
+      setStudents(response.results); // results is array of User
+    } catch (error) {
+      console.error('Failed to fetch students', error);
+    }
+  };
+
+  fetchStudents();
+}, []);
+
+
+
+
+
+
+  // // Mock data
+  // const students = [
+  //   { id: 1, name: 'John Doe', studentId: 'S001', email: 'john@example.com', status: 'Active', attendance: '95%' },
+  //   { id: 2, name: 'Jane Smith', studentId: 'S002', email: 'jane@example.com', status: 'Active', attendance: '89%' },
+  //   { id: 3, name: 'Bob Johnson', studentId: 'S003', email: 'bob@example.com', status: 'Inactive', attendance: '76%' },
+  //   { id: 4, name: 'Alice Brown', studentId: 'S004', email: 'alice@example.com', status: 'Active', attendance: '92%' },
+  // ];
+
+
 
   const attendanceLogs = [
     { id: 1, student: 'John Doe', time: '09:15 AM', date: '2024-01-15', status: 'Present', method: 'Face Recognition' },
@@ -80,6 +112,7 @@ const AdminPage: React.FC = () => {
   ];
 
   return (
+    
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header onMenuClick={handleMenuClick} />
       <Sidebar open={sidebarOpen} onClose={handleSidebarClose} />
@@ -191,7 +224,7 @@ const AdminPage: React.FC = () => {
                 <Button startIcon={<Download />} variant="outlined">
                   Export
                 </Button>
-                <Button startIcon={<Add />} variant="contained">
+                <Button startIcon={<Add />} variant="contained" onClick={() => setOpenAddStudent(true)}>
                   Add Student
                 </Button>
               </Box>
@@ -212,23 +245,24 @@ const AdminPage: React.FC = () => {
                 <TableBody>
                   {students.map((student) => (
                     <TableRow key={student.id} hover>
-                      <TableCell>{student.studentId}</TableCell>
-                      <TableCell>{student.name}</TableCell>
-                      <TableCell>{student.email}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={student.status}
-                          color={student.status === 'Active' ? 'success' : 'error'}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={student.attendance}
-                          color={parseInt(student.attendance) > 85 ? 'success' : 'warning'}
-                          size="small"
-                        />
-                      </TableCell>
+                    <TableCell>{student.student_id || '-'}</TableCell>
+                    <TableCell>{student.first_name} {student.last_name}</TableCell>
+                    <TableCell>{student.email}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={student.is_active ? 'Active' : 'Inactive'}
+                        color={student.is_active ? 'success' : 'error'}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={'-'} // Optional: replace with real attendance if API provides
+                        color="default"
+                        size="small"
+                      />
+                    </TableCell>
+
                       <TableCell align="right">
                         <IconButton size="small" color="primary">
                           <Visibility fontSize="small" />
@@ -298,6 +332,14 @@ const AdminPage: React.FC = () => {
           </TabPanel>
         </Paper>
       </Container>
+      {/* Add Student Modal */}
+      <AddStudentForm
+        open={openAddStudent}
+        onClose={() => setOpenAddStudent(false)}
+        onSuccess={() => {
+      // Optional: refresh students table here
+        }}
+      />
     </Box>
   );
 };

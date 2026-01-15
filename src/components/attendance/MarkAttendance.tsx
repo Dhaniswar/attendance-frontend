@@ -34,6 +34,8 @@ const MarkAttendance: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [attendanceData, setAttendanceData] = useState<any>(null);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+
 
   const steps = ['Face Detection', 'Liveness Check', 'Mark Attendance'];
 
@@ -72,11 +74,11 @@ const MarkAttendance: React.FC = () => {
     try {
       // Convert face to base64 if needed (simplified - in real app you'd store the image)
       const response = await faceApi.markAttendance({
-        image: '', // You need to store the image from camera
+        image: capturedImage!, // You need to store the image from camera
         location: 'Main Building',
       });
 
-      setAttendanceData(response.data);
+      setAttendanceData(response);
       setSuccess(true);
       
       // Show success for 3 seconds then redirect
@@ -104,7 +106,7 @@ const MarkAttendance: React.FC = () => {
         return (
           <AttendanceCamera
             onFaceDetected={handleFaceDetected}
-            onCapture={() => {}}
+            onCapture={(img) => setCapturedImage(img)}
             isProcessing={isProcessing}
           />
         );
