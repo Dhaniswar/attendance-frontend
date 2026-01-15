@@ -43,11 +43,11 @@ const MarkAttendance: React.FC = () => {
     setFaceResult(result);
     setError(null);
     
-    if (result.face_detected && (result.confidence || 0) > 0.6) {
+    if (result.faces && (result.confidence || 0) > 0.6) {
       setActiveStep(1);
     } else {
       setError(
-        result.face_detected 
+        result.faces 
           ? `Low confidence (${((result.confidence || 0) * 100).toFixed(1)}%). Please try again.`
           : 'No face detected. Please position yourself correctly.'
       );
@@ -55,6 +55,7 @@ const MarkAttendance: React.FC = () => {
   };
 
   const handleLivenessComplete = (result: any) => {
+    console.log("Liveness result:", result);
     if (result.is_live) {
       setActiveStep(2);
     } else {
@@ -63,7 +64,7 @@ const MarkAttendance: React.FC = () => {
   };
 
   const handleMarkAttendance = async () => {
-    if (!faceResult || !faceResult.face_detected || !faceResult.face_embedding || faceResult.face_embedding.length === 0) {
+    if (!faceResult || !faceResult.faces || !faceResult.face_embedding || faceResult.face_embedding.length === 0) {
       setError('No face data available');
       return;
     }

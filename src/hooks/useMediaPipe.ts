@@ -53,7 +53,7 @@ export const useMediaPipe = () => {
 
         if (faces.length === 0) {
           return {
-            face_detected: false,
+            faces: false,
             confidence: 0,
           };
         }
@@ -70,7 +70,7 @@ export const useMediaPipe = () => {
           : [];
 
         return {
-          face_detected: true,
+          faces: true,
           confidence,
           bounding_box: {
             x: boundingBox.x,

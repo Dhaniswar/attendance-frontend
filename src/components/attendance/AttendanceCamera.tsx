@@ -52,7 +52,7 @@ const capture = useCallback(async () => {
       // Call face detection API
       const response = await faceApi.detectFaces({ image: imageSrc });
       
-      if (response.face_detected) {
+      if (response.faces) {
         onFaceDetected(response);
         onCapture(imageSrc);
       } else {
@@ -64,7 +64,7 @@ const capture = useCallback(async () => {
       setIsProcessing?.(false);
     }
   }
-}, [onFaceDetected]);
+}, [onCapture, onFaceDetected, setIsProcessing]);
 
   const flipCamera = () => {
     setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'));

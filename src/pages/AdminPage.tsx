@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import {
   Container,
@@ -35,9 +37,8 @@ import Sidebar from '@/components/common/Sidebar';
 import StatisticsCard from '@/components/analytics/StatisticsCard';
 import AddStudentForm from '@/components/admin/AddStudentForm';
 import { studentApi } from '@/api/studentApi';
-import { User } from '@/types';
-
-
+import { attendanceApi } from '@/api/attendanceApi';
+import { Attendance, User } from '@/types';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -54,71 +55,55 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
 };
 
 const AdminPage: React.FC = () => {
+  const [students, setStudents] = useState<User[]>([]);
+  const [attendanceLogs, setAttendanceLogs] = useState<Attendance[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tabValue, setTabValue] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [openAddStudent, setOpenAddStudent] = useState(false);
 
-
-  const handleMenuClick = () => {
-    setSidebarOpen(true);
-  };
-
-  const handleSidebarClose = () => {
-    setSidebarOpen(false);
-  };
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
-
-
-  const [students, setStudents] = useState<User[]>([]);
-
-
+  const handleMenuClick = () => setSidebarOpen(true);
+  const handleSidebarClose = () => setSidebarOpen(false);
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => setTabValue(newValue);
 
   useEffect(() => {
-  const fetchStudents = async () => {
-    try {
-      const response = await studentApi.getStudents();
-      setStudents(response.results); // results is array of User
-    } catch (error) {
-      console.error('Failed to fetch students', error);
-    }
-  };
+    const fetchStudentsAndAttendance = async () => {
+      try {
+        // Fetch students
+        const studentsResponse = await studentApi.getStudents();
+        setStudents(studentsResponse.results);
 
-  fetchStudents();
-}, []);
+        // Fetch today's attendance
+        const attendanceResponse = await attendanceApi.getTodayAttendance();
+        // Map student_details into student object for table display
+        const mappedAttendance: Attendance[] = attendanceResponse.map((log: any) => ({
+          ...log,
+          student: log.student_details, // now student is User object
+        }));
+        setAttendanceLogs(mappedAttendance);
+      } catch (error) {
+        console.error('Failed to fetch students or attendance', error);
+      }
+    };
 
+    fetchStudentsAndAttendance();
+  }, []);
 
-
-
-
-
-  // // Mock data
-  // const students = [
-  //   { id: 1, name: 'John Doe', studentId: 'S001', email: 'john@example.com', status: 'Active', attendance: '95%' },
-  //   { id: 2, name: 'Jane Smith', studentId: 'S002', email: 'jane@example.com', status: 'Active', attendance: '89%' },
-  //   { id: 3, name: 'Bob Johnson', studentId: 'S003', email: 'bob@example.com', status: 'Inactive', attendance: '76%' },
-  //   { id: 4, name: 'Alice Brown', studentId: 'S004', email: 'alice@example.com', status: 'Active', attendance: '92%' },
-  // ];
-
-
-
-  const attendanceLogs = [
-    { id: 1, student: 'John Doe', time: '09:15 AM', date: '2024-01-15', status: 'Present', method: 'Face Recognition' },
-    { id: 2, student: 'Jane Smith', time: '09:30 AM', date: '2024-01-15', status: 'Late', method: 'Face Recognition' },
-    { id: 3, student: 'Bob Johnson', time: 'Absent', date: '2024-01-15', status: 'Absent', method: '-' },
-  ];
+  // Filtered students based on search
+  const filteredStudents = students.filter(
+    (s) =>
+      s.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (s.student_id || '').includes(searchQuery)
+  );
 
   return (
-    
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header onMenuClick={handleMenuClick} />
       <Sidebar open={sidebarOpen} onClose={handleSidebarClose} />
-      
+
       <Container maxWidth="xl" sx={{ flexGrow: 1, py: 4 }}>
-        {/* Header Section */}
+        {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
           <Box>
             <Typography variant="h4" gutterBottom fontWeight="bold">
@@ -128,66 +113,29 @@ const AdminPage: React.FC = () => {
               Manage students, attendance, and system settings
             </Typography>
           </Box>
-          
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="outlined"
-              startIcon={<Download />}
-              onClick={() => {/* Export functionality */}}
-            >
-              Export Data
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<PersonAdd />}
-              onClick={() => {/* Add student functionality */}}
-            >
-              Add Student
-            </Button>
+            <Button variant="outlined" startIcon={<Download />}>Export Data</Button>
+            <Button variant="contained" startIcon={<PersonAdd />}>Add Student</Button>
           </Box>
         </Box>
 
-        {/* Stats Section */}
+        {/* Stats */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
-            <StatisticsCard
-              title="Total Students"
-              value="1,234"
-              change="+12%"
-              icon={<Group />}
-              color="primary"
-            />
+            <StatisticsCard title="Total Students" value={students.length.toString()} change="+12%" icon={<Group />} color="primary" />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <StatisticsCard
-              title="Today's Attendance"
-              value="89%"
-              change="+3%"
-              icon={<Visibility />}
-              color="success"
-            />
+            <StatisticsCard title="Today's Attendance" value={attendanceLogs.length.toString()} change="+3%" icon={<Visibility />} color="success" />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <StatisticsCard
-              title="Active Sessions"
-              value="45"
-              change="+8"
-              icon={<PersonAdd />}
-              color="warning"
-            />
+            <StatisticsCard title="Active Sessions" value="45" change="+8" icon={<PersonAdd />} color="warning" />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <StatisticsCard
-              title="Recognition Rate"
-              value="99.2%"
-              change="+0.8%"
-              icon={<FilterList />}
-              color="info"
-            />
+            <StatisticsCard title="Recognition Rate" value="99.2%" change="+0.8%" icon={<FilterList />} color="info" />
           </Grid>
         </Grid>
 
-        {/* Tabs Section */}
+        {/* Tabs */}
         <Paper elevation={2} sx={{ borderRadius: 2 }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs value={tabValue} onChange={handleTabChange}>
@@ -207,29 +155,10 @@ const AdminPage: React.FC = () => {
                 size="small"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search />
-                    </InputAdornment>
-                  ),
-                }}
+                InputProps={{ startAdornment: <InputAdornment position="start"><Search /></InputAdornment> }}
                 sx={{ width: 300 }}
               />
-              
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button startIcon={<FilterList />} variant="outlined">
-                  Filter
-                </Button>
-                <Button startIcon={<Download />} variant="outlined">
-                  Export
-                </Button>
-                <Button startIcon={<Add />} variant="contained" onClick={() => setOpenAddStudent(true)}>
-                  Add Student
-                </Button>
-              </Box>
             </Box>
-
             <TableContainer>
               <Table>
                 <TableHead>
@@ -238,44 +167,36 @@ const AdminPage: React.FC = () => {
                     <TableCell>Name</TableCell>
                     <TableCell>Email</TableCell>
                     <TableCell>Status</TableCell>
-                    <TableCell>Attendance</TableCell>
+                    <TableCell>Attendance Today</TableCell>
                     <TableCell align="right">Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {students.map((student) => (
-                    <TableRow key={student.id} hover>
-                    <TableCell>{student.student_id || '-'}</TableCell>
-                    <TableCell>{student.first_name} {student.last_name}</TableCell>
-                    <TableCell>{student.email}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={student.is_active ? 'Active' : 'Inactive'}
-                        color={student.is_active ? 'success' : 'error'}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={'-'} // Optional: replace with real attendance if API provides
-                        color="default"
-                        size="small"
-                      />
-                    </TableCell>
-
-                      <TableCell align="right">
-                        <IconButton size="small" color="primary">
-                          <Visibility fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" color="info">
-                          <Edit fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" color="error">
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredStudents.map((student) => {
+                    const todayAttendance = attendanceLogs.find((log) => log.student.student_id === student.student_id);
+                    return (
+                      <TableRow key={student.id} hover>
+                        <TableCell>{student.student_id || '-'}</TableCell>
+                        <TableCell>{student.first_name} {student.last_name}</TableCell>
+                        <TableCell>{student.email}</TableCell>
+                        <TableCell>
+                          <Chip label={student.is_active ? 'Active' : 'Inactive'} color={student.is_active ? 'success' : 'error'} size="small" />
+                        </TableCell>
+                        <TableCell>
+                          {todayAttendance ? (
+                            <Chip label={todayAttendance.status_display} color="success" size="small" />
+                          ) : (
+                            <Chip label="Absent" color="error" size="small" />
+                          )}
+                        </TableCell>
+                        <TableCell align="right">
+                          <IconButton size="small" color="primary"><Visibility fontSize="small" /></IconButton>
+                          <IconButton size="small" color="info"><Edit fontSize="small" /></IconButton>
+                          <IconButton size="small" color="error"><Delete fontSize="small" /></IconButton>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -284,46 +205,40 @@ const AdminPage: React.FC = () => {
           {/* Attendance Logs Tab */}
           <TabPanel value={tabValue} index={1}>
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6">
-                Recent Attendance Logs
-              </Typography>
-              <Button
-                variant="outlined"
-                startIcon={<Download />}
-                onClick={() => {/* Export functionality */}}
-              >
-                Export Logs
-              </Button>
+              <Typography variant="h6">Today's Attendance</Typography>
+              <Button variant="outlined" startIcon={<Download />}>Export Logs</Button>
             </Box>
-
             <TableContainer>
               <Table>
                 <TableHead>
                   <TableRow sx={{ backgroundColor: 'grey.50' }}>
                     <TableCell>Date</TableCell>
                     <TableCell>Student</TableCell>
-                    <TableCell>Time</TableCell>
+                    <TableCell>Time In</TableCell>
+                    <TableCell>Time Out</TableCell>
                     <TableCell>Status</TableCell>
-                    <TableCell>Method</TableCell>
+                    <TableCell>Location</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {attendanceLogs.map((log) => (
                     <TableRow key={log.id} hover>
                       <TableCell>{log.date}</TableCell>
-                      <TableCell>{log.student}</TableCell>
-                      <TableCell>{log.time}</TableCell>
+                      <TableCell>{log.student.full_name}</TableCell>
+                      <TableCell>{log.time_in}</TableCell>
+                      <TableCell>{log.time_out || '-'}</TableCell>
                       <TableCell>
                         <Chip
-                          label={log.status}
+                          label={log.status_display}
                           color={
-                            log.status === 'Present' ? 'success' :
-                            log.status === 'Late' ? 'warning' : 'error'
+                            log.status_display === 'present' ? 'success' :
+                            log.status_display === 'late' ? 'warning' :
+                            'error'
                           }
                           size="small"
                         />
                       </TableCell>
-                      <TableCell>{log.method}</TableCell>
+                      <TableCell>{log.location || '-'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -332,14 +247,9 @@ const AdminPage: React.FC = () => {
           </TabPanel>
         </Paper>
       </Container>
+
       {/* Add Student Modal */}
-      <AddStudentForm
-        open={openAddStudent}
-        onClose={() => setOpenAddStudent(false)}
-        onSuccess={() => {
-      // Optional: refresh students table here
-        }}
-      />
+      <AddStudentForm open={openAddStudent} onClose={() => setOpenAddStudent(false)} />
     </Box>
   );
 };
