@@ -1,5 +1,5 @@
 import axiosInstance from './axiosConfig';
-import { Attendance, ApiResponse, PaginatedResponse } from '@/types';
+import { Attendance, PaginatedResponse } from '@/types';
 
 export interface MarkAttendanceRequest {
   image: string; // base64 encoded image
@@ -15,7 +15,7 @@ export const attendanceApi = {
 
 
   // Get today's attendance
-  getTodayAttendance: async (): Promise<ApiResponse<Attendance[]>> => {
+  getTodayAttendance: async (): Promise<Attendance[]> => {
     const response = await axiosInstance.get('/attendance/today/');
     return response.data;
   },
@@ -26,7 +26,7 @@ export const attendanceApi = {
     endDate: string,
     page: number = 1,
     pageSize: number = 10
-  ): Promise<ApiResponse<PaginatedResponse<Attendance>>> => {
+  ): Promise<PaginatedResponse<Attendance>> => {
     const response = await axiosInstance.get('/attendance/', {
       params: {
         start_date: startDate,
@@ -43,7 +43,7 @@ export const attendanceApi = {
     studentId: number,
     page: number = 1,
     pageSize: number = 10
-  ): Promise<ApiResponse<PaginatedResponse<Attendance>>> => {
+  ): Promise<PaginatedResponse<Attendance>> => {
     const response = await axiosInstance.get(`/attendance/${studentId}/`, {
       params: { page, page_size: pageSize },
     });

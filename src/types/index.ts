@@ -2,6 +2,7 @@ export interface User {
   id: number;
   email: string;
   first_name: string;
+  full_name?: string;
   last_name: string;
   role: 'student' | 'admin' | 'teacher';
   student_id?: string;
@@ -15,7 +16,7 @@ export interface Attendance {
   date: string;
   time_in: string;
   time_out?: string;
-  status: 'present' | 'absent' | 'late' | 'half_day';
+  status_display: 'present' | 'absent' | 'late' | 'half_day';
   location?: string;
   verified_by_face: boolean;
   confidence_score: number;
@@ -25,12 +26,12 @@ export interface LivenessCheck {
   eye_blink_detected: boolean;
   head_movement_detected: boolean;
   texture_analysis_passed: boolean;
-  overall_score: number;
+  score: number;
   is_live: boolean;
 }
 
 export interface FaceDetectionResult {
-  face_detected: boolean;
+  faces: boolean;
   face_embedding?: number[];
   bounding_box?: {
     x: number;

@@ -255,21 +255,19 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                       </MenuItem>
                     ))
                   )}
-
-                  {notifications.length > 0 && (
-                    <>
-                      <Divider />
-                      <MenuItem onClick={handleMarkAllAsRead}>
-                        <Typography
-                          variant="body2"
-                          color="primary"
-                          sx={{ textAlign: 'center', width: '100%' }}
-                        >
-                          Mark all as read
-                        </Typography>
-                      </MenuItem>
-                    </>
-                  )}
+                  
+                {notifications.length > 0 && [
+                  <Divider key="divider" />,
+                  <MenuItem key="mark-all" onClick={handleMarkAllAsRead}>
+                    <Typography
+                      variant="body2"
+                      color="primary"
+                      sx={{ width: '100%', textAlign: 'center' }}
+                    >
+                      Mark all as read
+                    </Typography>
+                  </MenuItem>,
+                ]}
                 </Menu>
 
                 {/* User menu */}

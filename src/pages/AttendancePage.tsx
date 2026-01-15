@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import {
@@ -34,6 +36,7 @@ import Sidebar from '@/components/common/Sidebar';
 import AttendanceCamera from '@/components/attendance/AttendanceCamera';
 import LivenessCheck from '@/components/attendance/LivenessCheck';
 import { RootState } from '@/store/store';
+import { faceApi } from '@/api/faceApi'; 
 import { FaceDetectionResult, LivenessCheck as LivenessCheckType } from '@/types';
 
 const AttendancePage: React.FC = () => {
@@ -62,11 +65,11 @@ const AttendancePage: React.FC = () => {
     setFaceResult(result);
     setErrorMessage(null);
     
-    if (result.face_detected && result.confidence > 0.8) {
+    if (result.faces && result.confidence > 0.8) {
       setActiveStep(1);
     } else {
       setErrorMessage(
-        result.face_detected 
+        result.faces 
           ? `Low confidence (${(result.confidence * 100).toFixed(1)}%). Please try again.`
           : 'No face detected. Please position yourself correctly.'
       );
@@ -76,7 +79,7 @@ const AttendancePage: React.FC = () => {
   const handleLivenessComplete = (result: LivenessCheckType) => {
     setLivenessResult(result);
     
-    if (result.is_live && result.overall_score > 0.7) {
+    if (result.is_live && result.score > 0.7) {
       setActiveStep(2);
     } else {
       setErrorMessage('Liveness check failed. Please try again.');
@@ -95,7 +98,7 @@ const handleCaptureImage = async (imageData: string) => {
   await new Promise(resolve => setTimeout(resolve, 800));
 
   const mockResult: FaceDetectionResult = {
-    face_detected: true,
+    faces: true,
     confidence: 0.92,
     face_embedding: Array(128).fill(0.1),
     bounding_box: { x: 100, y: 100, width: 200, height: 200 },
@@ -107,13 +110,31 @@ const handleCaptureImage = async (imageData: string) => {
   };
 
   const handleMarkAttendance = async () => {
-    setIsProcessing(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+  if (!capturedImages.length) {
+    setErrorMessage('No image captured');
+    return;
+  }
     
     setSuccessDialog(true);
     setIsProcessing(false);
+  try {
+    const response = await faceApi.markAttendance({
+      image: capturedImages[capturedImages.length - 1], // latest image
+      location: 'Main Gate',
+    });
+
+    console.log('Attendance marked:', response);
+
+    setSuccessDialog(true);
+  } catch (err: any) {
+    console.error(err);
+    setErrorMessage(
+      err?.response?.data?.error || 'Failed to mark attendance'
+    );
+  } finally {
+    setIsProcessing(false);
+  }
+
   };
 
   const handleReset = () => {
@@ -165,7 +186,7 @@ const handleCaptureImage = async (imageData: string) => {
                       Liveness check passed
                     </Typography>
                     <Typography variant="body2">
-                      Score: {(livenessResult.overall_score * 100).toFixed(1)}%
+                      Score: {(livenessResult.score * 100).toFixed(1)}%
                     </Typography>
                   </Alert>
                 )}

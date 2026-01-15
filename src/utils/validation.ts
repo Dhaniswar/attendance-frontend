@@ -151,7 +151,7 @@ export const validateLivenessCheck = (
   result: any,
   threshold: number = 0.7
 ): { isValid: boolean; error?: string } => {
-  if (!result?.is_live || result.overall_score < threshold) {
+  if (!result?.is_live || result.score < threshold) {
     return { isValid: false, error: ERROR_MESSAGES.LIVENESS_FAILED };
   }
 
