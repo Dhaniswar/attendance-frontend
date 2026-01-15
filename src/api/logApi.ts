@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axiosInstance from './axiosConfig';
-import { ApiResponse, PaginatedResponse } from '@/types';
+import {  PaginatedResponse } from '@/types';
 
 export interface SystemLog {
   id: number;
@@ -22,7 +22,7 @@ export const logApi = {
     type?: string,
     startDate?: string,
     endDate?: string
-  ): Promise<ApiResponse<PaginatedResponse<SystemLog>>> => {
+  ): Promise<PaginatedResponse<SystemLog>> => {
     const response = await axiosInstance.get('/system-logs/', {
       params: {
         page,
@@ -37,13 +37,13 @@ export const logApi = {
   },
 
   // Get log by ID
-  getLogById: async (id: number): Promise<ApiResponse<SystemLog>> => {
+  getLogById: async (id: number): Promise<SystemLog> => {
     const response = await axiosInstance.get(`/system-logs/${id}/`);
     return response.data;
   },
 
   // Clear old logs
-  clearOldLogs: async (days: number = 30): Promise<ApiResponse<{ deleted_count: number }>> => {
+  clearOldLogs: async (days: number = 30): Promise<{ deleted_count: number }> => {
     const response = await axiosInstance.post('/system-logs/clear/', { days });
     return response.data;
   },

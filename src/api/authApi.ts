@@ -1,5 +1,5 @@
 import axiosInstance from './axiosConfig';
-import { User, ApiResponse } from '@/types';
+import { User } from '@/types';
 
 export interface LoginCredentials {
   email: string;
@@ -12,6 +12,7 @@ export interface RegisterData extends LoginCredentials {
   student_id?: string;
   role?: string;
   phone?: string;
+  confirm_password: string;
 }
 
 export interface AuthResponse {
@@ -21,12 +22,12 @@ export interface AuthResponse {
 }
 
 export const authApi = {
-  login: async (credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> => {
+  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const response = await axiosInstance.post('/auth/token/access/', credentials);
     return response.data;
   },
 
-  register: async (data: RegisterData): Promise<ApiResponse<User>> => {
+  register: async (data: RegisterData): Promise<User> => {
     const response = await axiosInstance.post('/users/', data);
     return response.data;
   },
@@ -41,7 +42,7 @@ export const authApi = {
     localStorage.removeItem('user');
   },
 
-  getCurrentUser: async (): Promise<ApiResponse<User>> => {
+  getCurrentUser: async (): Promise<User> => {
     const response = await axiosInstance.get('/users/me/');
     return response.data;
   },

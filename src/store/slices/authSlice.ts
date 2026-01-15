@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { User } from '@/types';
 import { authApi, LoginCredentials, RegisterData } from '@/api/authApi';
@@ -23,26 +24,34 @@ export const login = createAsyncThunk(
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
       const response = await authApi.login(credentials);
-      const { access, refresh, user } = response.data;
-      
+
+      // Directly use response from backend
+      const { access, refresh, user } = response;
+
       localStorage.setItem('access_token', access);
       localStorage.setItem('refresh_token', refresh);
       localStorage.setItem('user', JSON.stringify(user));
-      
+
       return { user, token: access };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      // Catch Django error
+      const errMsg =
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        'Login failed';
+      return rejectWithValue(errMsg);
     }
   }
 );
+
 
 export const register = createAsyncThunk(
   'auth/register',
   async (data: RegisterData, { rejectWithValue }) => {
     try {
       const response = await authApi.register(data);
-      return response.data;
+      console.log("Data*****************", response);
+      return response;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Registration failed');

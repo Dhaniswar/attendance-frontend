@@ -134,6 +134,7 @@ const Register: React.FC = () => {
       last_name: formData.last_name,
       email: formData.email,
       password: formData.password,
+      confirm_password: formData.confirmPassword,
       student_id: formData.student_id,
       role: formData.role,
     };

@@ -14,12 +14,12 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, allowedRoles }) =
   const location = useLocation();
 
   // DEVELOPMENT MODE: Allow all access
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  // const isDevelopment = process.env.NODE_ENV === 'development';
   
-  if (isDevelopment) {
-    // In development, bypass all checks
-    return <>{children}</>;
-  }
+  // if (isDevelopment) {
+  //   // In development, bypass all checks
+  //   return <>{children}</>;
+  // }
 
   // PRODUCTION MODE
   if (!user) {

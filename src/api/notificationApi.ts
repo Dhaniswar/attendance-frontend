@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axiosInstance from './axiosConfig';
-import { ApiResponse, PaginatedResponse } from '@/types';
+import { PaginatedResponse } from '@/types';
 
 export interface Notification {
   id: number;
@@ -18,7 +18,7 @@ export const notificationApi = {
     page: number = 1,
     pageSize: number = 10,
     unreadOnly: boolean = false
-  ): Promise<ApiResponse<PaginatedResponse<Notification>>> => {
+  ): Promise< PaginatedResponse<Notification>> => {
     const response = await axiosInstance.get('/notifications/', {
       params: { page, page_size: pageSize, unread_only: unreadOnly },
     });
@@ -26,19 +26,19 @@ export const notificationApi = {
   },
 
   // Mark notification as read
-  markAsRead: async (id: number): Promise<ApiResponse<void>> => {
+  markAsRead: async (id: number): Promise< void> => {
     const response = await axiosInstance.post(`/notifications/${id}/mark_read/`);
     return response.data;
   },
 
   // Mark all notifications as read
-  markAllAsRead: async (): Promise<ApiResponse<void>> => {
+  markAllAsRead: async (): Promise< void> => {
     const response = await axiosInstance.post('/notifications/mark_all_read/');
     return response.data;
   },
 
   // Delete notification
-  deleteNotification: async (id: number): Promise<ApiResponse<void>> => {
+  deleteNotification: async (id: number): Promise<void> => {
     const response = await axiosInstance.delete(`/notifications/${id}/`);
     return response.data;
   },

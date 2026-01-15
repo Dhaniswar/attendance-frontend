@@ -47,7 +47,7 @@ export const markAttendance = createAsyncThunk(
   async (data: { image: string; location?: string }, { rejectWithValue }) => {
     try {
       const response = await faceApi.markAttendance(data);
-      return response.data;
+      return response;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to mark attendance');
     }

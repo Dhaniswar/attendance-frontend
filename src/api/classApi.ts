@@ -1,5 +1,5 @@
 import axiosInstance from './axiosConfig';
-import { ApiResponse, PaginatedResponse } from '@/types';
+import {PaginatedResponse } from '@/types';
 
 export interface Class {
   id: number;
@@ -31,7 +31,7 @@ export const classApi = {
     page: number = 1,
     pageSize: number = 10,
     search?: string
-  ): Promise<ApiResponse<PaginatedResponse<Class>>> => {
+  ): Promise<PaginatedResponse<Class>> => {
     const response = await axiosInstance.get('/classes/', {
       params: { page, page_size: pageSize, search },
     });
@@ -39,37 +39,37 @@ export const classApi = {
   },
 
   // Get class by ID
-  getClassById: async (id: number): Promise<ApiResponse<Class>> => {
+  getClassById: async (id: number): Promise< Class> => {
     const response = await axiosInstance.get(`/classes/${id}/`);
     return response.data;
   },
 
   // Create class
-  createClass: async (data: ClassCreateRequest): Promise<ApiResponse<Class>> => {
+  createClass: async (data: ClassCreateRequest): Promise< Class> => {
     const response = await axiosInstance.post('/classes/', data);
     return response.data;
   },
 
   // Update class
-  updateClass: async (id: number, data: Partial<ClassCreateRequest>): Promise<ApiResponse<Class>> => {
+  updateClass: async (id: number, data: Partial<ClassCreateRequest>): Promise< Class> => {
     const response = await axiosInstance.patch(`/classes/${id}/`, data);
     return response.data;
   },
 
   // Delete class
-  deleteClass: async (id: number): Promise<ApiResponse<void>> => {
+  deleteClass: async (id: number): Promise<void> => {
     const response = await axiosInstance.delete(`/classes/${id}/`);
     return response.data;
   },
 
   // Add student to class
-  addStudent: async (classId: number, studentId: number): Promise<ApiResponse<Class>> => {
+  addStudent: async (classId: number, studentId: number): Promise<Class> => {
     const response = await axiosInstance.post(`/classes/${classId}/add_student/`, { student_id: studentId });
     return response.data;
   },
 
   // Remove student from class
-  removeStudent: async (classId: number, studentId: number): Promise<ApiResponse<Class>> => {
+  removeStudent: async (classId: number, studentId: number): Promise<Class> => {
     const response = await axiosInstance.post(`/classes/${classId}/remove_student/`, { student_id: studentId });
     return response.data;
   },
