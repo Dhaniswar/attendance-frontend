@@ -1,0 +1,54 @@
+import axiosInstance from './axiosConfig';
+import { User } from '@/types';
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData extends LoginCredentials {
+  first_name: string;
+  last_name: string;
+  student_id?: string;
+  role?: string;
+  phone?: string;
+  confirm_password: string;
+}
+
+export interface AuthResponse {
+  access: string;
+  refresh: string;
+  user: User;
+}
+
+export const authApi = {
+  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+    const response = await axiosInstance.post('/auth/token/access/', credentials);
+    return response.data;
+  },
+
+  register: async (data: RegisterData): Promise<User> => {
+    const response = await axiosInstance.post('/users/', data);
+    return response.data;
+  },
+
+  logout: async (): Promise<void> => {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (refreshToken) {
+      await axiosInstance.post('/auth/logout/', { refresh: refreshToken });
+    }
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+  },
+
+  getCurrentUser: async (): Promise<User> => {
+    const response = await axiosInstance.get('/users/me/');
+    return response.data;
+  },
+
+  refreshToken: async (refresh: string): Promise<{ access: string }> => {
+    const response = await axiosInstance.post('/auth/token/refresh/', { refresh });
+    return response.data;
+  },
+};

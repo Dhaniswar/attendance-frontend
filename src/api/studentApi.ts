@@ -1,0 +1,116 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import axiosInstance from './axiosConfig';
+import { User,  PaginatedResponse } from '@/types';
+
+export interface StudentCreateRequest {
+  first_name: string;
+  last_name: string;
+  email: string;
+  student_id: string;
+  password: string;
+  confirm_password: string;
+  role?: 'STUDENT' | 'TEACHER' | 'ADMIN';
+  phone?: string;
+}
+
+export interface StudentUpdateRequest {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  student_id?: string;
+  is_active?: boolean;
+}
+
+export const studentApi = {
+  // Get all students
+  getStudents: async (
+    page: number = 1,
+    pageSize: number = 10,
+    search?: string
+  ): Promise<PaginatedResponse<User>> => {
+    const response = await axiosInstance.get('/users/', {
+      params: { page, page_size: pageSize, search },
+    });
+    return response.data;
+  },
+
+  // Get student by ID
+  getStudentById: async (id: number): Promise<User> => {
+    const response = await axiosInstance.get(`/users/${id}/`);
+    return response.data;
+  },
+
+  // Create new student
+  createStudent: async (data: StudentCreateRequest): Promise<User> => {
+    const response = await axiosInstance.post('/users/', data);
+    return response.data;
+  },
+
+  // Update student
+  updateStudent: async (
+    id: number,
+    data: StudentUpdateRequest
+  ): Promise<User> => {
+    const response = await axiosInstance.patch(`/users/${id}/`, data);
+    return response.data;
+  },
+
+  // Delete student
+  deleteStudent: async (id: number): Promise<void> => {
+    const response = await axiosInstance.delete(`/users/${id}/`);
+    return response.data;
+  },
+
+  // Bulk import students
+  importStudents: async (file: File): Promise<{ imported: number; failed: number }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await axiosInstance.post('/users/import/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Get student statistics
+  getStudentStatistics: async (): Promise<any> => {
+    const response = await axiosInstance.get('/users/statistics/');
+    return response.data;
+  },
+
+  // Search students
+  searchStudents: async (
+    query: string,
+    page: number = 1,
+    pageSize: number = 10
+  ): Promise<PaginatedResponse<User>> => {
+    const response = await axiosInstance.get('/users/search/', {
+      params: { q: query, page, page_size: pageSize },
+    });
+    return response.data;
+  },
+
+  // Get inactive students
+  getInactiveStudents: async (
+    page: number = 1,
+    pageSize: number = 10
+  ): Promise<PaginatedResponse<User>> => {
+    const response = await axiosInstance.get('/users/inactive/', {
+      params: { page, page_size: pageSize },
+    });
+    return response.data;
+  },
+
+  // Activate/deactivate student
+  toggleStudentStatus: async (
+    id: number,
+    isActive: boolean
+  ): Promise<User> => {
+    const response = await axiosInstance.patch(`/users/${id}/status/`, {
+      is_active: isActive,
+    });
+    return response.data;
+  },
+};
