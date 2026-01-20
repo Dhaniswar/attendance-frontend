@@ -115,7 +115,14 @@ const AdminPage: React.FC = () => {
           </Box>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button variant="outlined" startIcon={<Download />}>Export Data</Button>
-            <Button variant="contained" startIcon={<PersonAdd />}>Add Student</Button>
+            <Button
+              variant="contained"
+              startIcon={<PersonAdd />}
+              onClick={() => setOpenAddStudent(true)}
+            >
+              Add Student
+            </Button>
+
           </Box>
         </Box>
 
