@@ -49,6 +49,9 @@ const AttendancePage: React.FC = () => {
   const [successDialog, setSuccessDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
+  const [livenessImages, setLivenessImages] = useState<string[]>([]);
+  const [isEnrolling, setIsEnrolling] = useState(false);
+
 
 
   const steps = ['Face Detection', 'Liveness Check', 'Confirmation'];
@@ -127,9 +130,9 @@ const handleCaptureImage = async (imageData: string) => {
 
     setSuccessDialog(true);
   } catch (err: any) {
-    console.error(err);
+    console.error('Attendance error:', err.response?.data);
     setErrorMessage(
-      err?.response?.data?.error || 'Failed to mark attendance'
+      err?.response?.data?.error || err?.response?.data?.detail  || 'Failed to mark attendance'
     );
   } finally {
     setIsProcessing(false);
