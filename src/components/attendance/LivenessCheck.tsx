@@ -18,7 +18,7 @@ import { faceApi } from '@/api/faceApi';
 import { LivenessCheck as LivenessCheckType } from '@/types';
 
 interface LivenessCheckProps {
-  onComplete: (result: LivenessCheckType) => void;
+  onComplete: (result: LivenessCheckType, images: string[]) => void;
   isProcessing?: boolean;
 }
 
@@ -63,7 +63,7 @@ const LivenessCheck: React.FC<LivenessCheckProps> = ({ onComplete }) => {
 
       console.log('Liveness response:', res);
 
-      onComplete(res);
+      onComplete(res, images);
     } catch (err) {
       setError('Liveness check failed');
     } finally {
