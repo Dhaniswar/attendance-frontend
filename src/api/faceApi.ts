@@ -16,7 +16,6 @@ export interface LivenessCheckRequest {
 }
 
 export interface FaceEnrollmentRequest {
-  student_id: number;
   images: string[];
 }
 

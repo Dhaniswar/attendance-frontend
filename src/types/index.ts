@@ -8,6 +8,7 @@ export interface User {
   student_id?: string;
   is_active: boolean;
   date_joined: string;
+  face_encoding?: number[] | null;
 }
 
 export interface Attendance {

@@ -35,6 +35,8 @@ const MarkAttendance: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [attendanceData, setAttendanceData] = useState<any>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [livenessImages, setLivenessImages] = useState<string[]>([]);
+
 
 
   const steps = ['Face Detection', 'Liveness Check', 'Mark Attendance'];
@@ -54,14 +56,31 @@ const MarkAttendance: React.FC = () => {
     }
   };
 
-  const handleLivenessComplete = (result: any) => {
-    console.log("Liveness result:", result);
-    if (result.is_live) {
-      setActiveStep(2);
-    } else {
-      setError('Liveness check failed. Please try again.');
-    }
-  };
+const handleLivenessComplete = async (result: any, images: string[]) => {
+  console.log("Liveness result:", result);
+
+  if (!result.is_live) {
+    setError('Liveness check failed. Please try again.');
+    return;
+  }
+
+  setLivenessImages(images);
+
+  // ENROLL FACE HERE
+  try {
+    await faceApi.enrollFace({
+      images: livenessImages, // 3 liveness images
+    });
+
+    console.log('Face enrolled successfully');
+  } catch (err: any) {
+    // If already enrolled, backend should ignore or return 409
+    console.warn('Face enrollment skipped:', err.response?.data);
+  }
+
+  setActiveStep(2);
+};
+
 
   const handleMarkAttendance = async () => {
     if (!faceResult || !faceResult.faces || !faceResult.face_embedding || faceResult.face_embedding.length === 0) {
